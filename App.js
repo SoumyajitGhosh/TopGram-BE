@@ -1,17 +1,33 @@
 const express = require('express');
-const app = express();
 const cors = require('cors');
-const userRouter = require('./user/userRouter');
-const AppError = require('./errorHandling/appError');
+const compression = require("compression");
+const helmet = require("helmet");
 
-app.use(cors());
-app.use(express.json());
+// Create the Express application object
+const app = express();
 
-app.use('/login', userRouter);
-app.use('/signup', userRouter);
+// Compress the HTTP response sent back to a client
+app.use(compression()); //Compress all routes
 
-app.all('*', (req, res, next) => {
-    next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
-  });
+// Use Helmet to protect against well known vulnerabilities
+app.use(helmet());
+
+// Set up cors to allow us to accept requests from our client
+app.use(
+	cors({
+		origin: "http://localhost:3000", // <-- location of the react app were connecting to
+		credentials: true,
+	})
+);
+
+// Parsers
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true }));
+
+/**
+ * -------------- ROUTES ----------------
+ */
+ require("./user/userRouter")(app);
+ require("./posts/postRouter")(app);
 
 module.exports = app;
